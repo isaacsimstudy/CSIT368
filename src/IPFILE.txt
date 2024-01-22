@@ -1,0 +1,23 @@
+SenderIP 127.0.0.1
+ReceiverIP 127.0.0.1
+SenderPort 25566
+ReceiverPort 25565
+
+
+// have one file for alice and one for bob
+
+// alice
+senderIP
+senderPort
+remoteIP
+remotePort
+AlicePrivateKey
+remotePublicKey
+
+// bob
+senderIP
+senderPort
+remoteIP
+remotePort
+BobPrivateKey
+remotePublicKey

@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.DatagramPacket;
@@ -15,7 +16,7 @@ public class main {
     static BigInteger remotePrivateKey = new BigInteger("6255983986685995629823699191343964199066558780564601644115388277120319993596327698381872009667378867633811920977825989397259798891964470515483469208807054");
     static BigInteger localPrivateKey = new BigInteger("11868526698511104855084256721330480674148301246409598143612631864097107400818064908564819949520988188891225978290102013612734826744059486075587544325105037");
     static BigInteger localPublicKey = new BigInteger("13048340261633346571846928341279963048816713985911861666997289538565904008394415467724767926107467276847567327556571491326784158578821209230090090922706869");
-
+    static String data[] = new String[13];
     public static void main(String[] args) throws IOException{
 
         Thread server = new Thread(new Runnable(){
@@ -38,8 +39,41 @@ public class main {
                 }
             }
         });
-        server.start();
-        client.start();
+        System.out.println("Enter Sender and Receiver File Name:");
+        Scanner sc = new Scanner(System.in);
+        try {
+            File file = new File(sc.nextLine());
+            Scanner fileReader = new Scanner(file);
+            int i = 0;
+            while (fileReader.hasNextLine()) {
+                String line = fileReader.nextLine();
+                data[i] = line;
+                i++;
+            }
+            fileReader.close();
+        } catch (Exception e) {
+            System.out.println("File not found");
+        }
+        System.out.println("Choose to start server or client or both");
+        System.out.println("1. Server");
+        System.out.println("2. Client");
+        System.out.println("3. Both");
+        int choice = sc.nextInt();
+        switch(choice){
+            case 1:
+                server.start();
+                break;
+            case 2:
+                client.start();
+                break;
+            case 3:
+                server.start();
+                client.start();
+                break;
+            default:
+                System.out.println("Invalid choice");
+                break;
+        }
     }
 
     public static void server() throws IOException{

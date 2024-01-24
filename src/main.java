@@ -12,18 +12,45 @@ import java.util.Scanner;
 public class main {
     static BigInteger p = new BigInteger("13232376895198612407547930718267435757728527029623408872245156039757713029036368719146452186041204237350521785240337048752071462798273003935646236777459223");
     static BigInteger g = new BigInteger("5421644057436475141609648488325705128047428394380474376834667300766108262613900542681289080713724597310673074119355136085795982097390670890367185141189796");
-    static BigInteger remotePublicKey = new BigInteger("629793796486995664080725752407537496794064786113392023999505216348694311366900579329784301605019270546150577068917545520648019990781107715819556898683513");
-    static BigInteger remotePrivateKey = new BigInteger("6255983986685995629823699191343964199066558780564601644115388277120319993596327698381872009667378867633811920977825989397259798891964470515483469208807054");
-    static BigInteger localPrivateKey = new BigInteger("11868526698511104855084256721330480674148301246409598143612631864097107400818064908564819949520988188891225978290102013612734826744059486075587544325105037");
-    static BigInteger localPublicKey = new BigInteger("13048340261633346571846928341279963048816713985911861666997289538565904008394415467724767926107467276847567327556571491326784158578821209230090090922706869");
-    static String data[] = new String[13];
-    public static void main(String[] args) throws IOException{
 
+
+    public static void main(String[] args) throws IOException{
+        String [] sender = new String[6];
+        System.out.println("Enter Sender name");
+        Scanner sc = new Scanner(System.in);
+        try {
+            File file = new File(sc.nextLine());
+            Scanner fileReader = new Scanner(file);
+            int i = 0;
+            while (fileReader.hasNextLine()) {
+                String line = fileReader.nextLine();
+                sender[i] = line.split(" ")[1];
+                i++;
+            }
+            fileReader.close();
+        } catch (Exception e) {
+            System.out.println("File not found");
+        }
+        String [] receiver = new String[6];
+        System.out.println("Enter Receiver name");
+        try {
+            File file = new File(sc.nextLine());
+            Scanner fileReader = new Scanner(file);
+            int i = 0;
+            while (fileReader.hasNextLine()) {
+                String line = fileReader.nextLine();
+                receiver[i] = line.split(" ")[1];
+                i++;
+            }
+            fileReader.close();
+        } catch (Exception e) {
+            System.out.println("File not found");
+        }
         Thread server = new Thread(new Runnable(){
             @Override
             public void run(){
                 try {
-                    server();
+                    server(receiver[1], receiver[2], receiver[4], sender[5]);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -33,27 +60,12 @@ public class main {
             @Override
             public void run(){
                 try {
-                    client();
+                    client(sender[2], sender[3], sender[4], receiver[5]);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         });
-        System.out.println("Enter Sender and Receiver File Name:");
-        Scanner sc = new Scanner(System.in);
-        try {
-            File file = new File(sc.nextLine());
-            Scanner fileReader = new Scanner(file);
-            int i = 0;
-            while (fileReader.hasNextLine()) {
-                String line = fileReader.nextLine();
-                data[i] = line;
-                i++;
-            }
-            fileReader.close();
-        } catch (Exception e) {
-            System.out.println("File not found");
-        }
         System.out.println("Choose to start server or client or both");
         System.out.println("1. Server");
         System.out.println("2. Client");
@@ -76,8 +88,12 @@ public class main {
         }
     }
 
-    public static void server() throws IOException{
-        DatagramSocket ds = new DatagramSocket(1234);
+    public static void server(String receiverIP, String receiverPort, String receiverPrivateKey, String senderPublicKey) throws IOException{
+        BigInteger rPrivateKey = new BigInteger(receiverPrivateKey);
+        BigInteger sPublicKey = new BigInteger(senderPublicKey);
+        int port = Integer.parseInt(receiverPort);
+        InetAddress ip = InetAddress.getByName(receiverIP);
+        DatagramSocket ds = new DatagramSocket(port);
         byte[] receive = new byte[65535];
 
         DatagramPacket DpReceive = null;
@@ -101,11 +117,11 @@ public class main {
 
 
             // TK = gPowR^remotePrivateKey mod p
-            BigInteger TK = gPowR.modPow(remotePrivateKey, p);
+            BigInteger TK = gPowR.modPow(rPrivateKey, p);
             System.out.println("TK: " + TK);
 
             // LK = localPublicKey^remotePrivateKey mod p
-            BigInteger LK = localPublicKey.modPow(remotePrivateKey, p);
+            BigInteger LK = sPublicKey.modPow(rPrivateKey, p);
             System.out.println("LK: " + LK);
 
             // Compute MAC= H(LK || gPowR || C || LK) where || is concatenation and H is SHA-1
@@ -158,15 +174,16 @@ public class main {
         return ret;
     }
 
-    public static void client() throws IOException{
+    public static void client(String remoteIP, String remotePort, String lPrivateKey, String rPublicKey) throws IOException{
+        BigInteger localPrivateKey = new BigInteger(lPrivateKey);
+        BigInteger remotePublicKey = new BigInteger(rPublicKey);
+        int port = Integer.parseInt(remotePort);
         Scanner sc = new Scanner(System.in);
 
         // Step 1:Create the socket object for
         // carrying the data.
-        DatagramSocket ds = new DatagramSocket();
-
-
-        InetAddress ip = InetAddress.getLocalHost();
+        DatagramSocket ds = new DatagramSocket(port);
+        InetAddress ip = InetAddress.getByName(remoteIP);
         byte buf[] = null;
 
 

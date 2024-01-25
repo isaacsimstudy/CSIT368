@@ -15,42 +15,53 @@ public class main {
 
 
     public static void main(String[] args) throws IOException{
+        System.out.println("Working Directory = " + System.getProperty("user.dir"));
         String [] sender = new String[6];
         System.out.println("Enter Sender name");
         Scanner sc = new Scanner(System.in);
-        try {
-            File file = new File(sc.nextLine());
-            Scanner fileReader = new Scanner(file);
-            int i = 0;
-            while (fileReader.hasNextLine()) {
-                String line = fileReader.nextLine();
-                sender[i] = line.split(" ")[1];
-                i++;
+        String senderFileName = sc.nextLine();
+        while(true){
+            try {
+                File file = new File(senderFileName);
+                Scanner fileReader = new Scanner(file);
+                int i = 0;
+                while (fileReader.hasNextLine()) {
+                    String line = fileReader.nextLine();
+                    sender[i] = line.split(" ")[1];
+                    i++;
+                }
+                fileReader.close();
+                break;
+            } catch (Exception e) {
+                System.out.println("File not found");
             }
-            fileReader.close();
-        } catch (Exception e) {
-            System.out.println("File not found");
         }
         String [] receiver = new String[6];
         System.out.println("Enter Receiver name");
-        try {
-            File file = new File(sc.nextLine());
-            Scanner fileReader = new Scanner(file);
-            int i = 0;
-            while (fileReader.hasNextLine()) {
-                String line = fileReader.nextLine();
-                receiver[i] = line.split(" ")[1];
-                i++;
+        String receiverFileName = sc.nextLine();
+        while(true){
+            try {
+                File file = new File(receiverFileName);
+                Scanner fileReader = new Scanner(file);
+                int i = 0;
+                while (fileReader.hasNextLine()) {
+                    String line = fileReader.nextLine();
+                    receiver[i] = line.split(" ")[1];
+                    i++;
+                }
+                fileReader.close();
+                break;
+            } catch (Exception e) {
+                System.out.println("File not found");
             }
-            fileReader.close();
-        } catch (Exception e) {
-            System.out.println("File not found");
         }
+
         Thread server = new Thread(new Runnable(){
             @Override
             public void run(){
                 try {
-                    server(receiver[1], receiver[2], receiver[4], sender[5]);
+                    System.out.println("Server started");
+                    server(receiver[3], receiver[4], sender[5]);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -60,7 +71,8 @@ public class main {
             @Override
             public void run(){
                 try {
-                    client(sender[2], sender[3], sender[4], receiver[5]);
+                    System.out.println("Client started");
+                    client(sender[0], sender[1], sender[4], receiver[5]);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -88,11 +100,11 @@ public class main {
         }
     }
 
-    public static void server(String receiverIP, String receiverPort, String receiverPrivateKey, String senderPublicKey) throws IOException{
+    public static void server(String receiverPort, String receiverPrivateKey, String senderPublicKey) throws IOException{
         BigInteger rPrivateKey = new BigInteger(receiverPrivateKey);
         BigInteger sPublicKey = new BigInteger(senderPublicKey);
+        System.out.println("Receiver port: " + receiverPort);
         int port = Integer.parseInt(receiverPort);
-        InetAddress ip = InetAddress.getByName(receiverIP);
         DatagramSocket ds = new DatagramSocket(port);
         byte[] receive = new byte[65535];
 
@@ -101,10 +113,10 @@ public class main {
         {
             // Step 2 : create a DatagramPacket to receive the data.
             DpReceive = new DatagramPacket(receive, receive.length);
-
+            System.out.println("Waiting for client to send message");
             // Step 3 : receive the data in byte buffer.
             ds.receive(DpReceive);
-
+            System.out.println("Client sent message");
             // Step 4 : convert the data from byte array to string.
             String receivedData = data(receive).toString();
 
@@ -113,21 +125,17 @@ public class main {
             BigInteger gPowR = new BigInteger(receivedDataArray[0]);
             BigInteger C = new BigInteger(receivedDataArray[1]);
             String MAC = receivedDataArray[2];
-            System.out.println("MAC: " + MAC);
 
 
             // TK = gPowR^remotePrivateKey mod p
             BigInteger TK = gPowR.modPow(rPrivateKey, p);
-            System.out.println("TK: " + TK);
 
             // LK = localPublicKey^remotePrivateKey mod p
             BigInteger LK = sPublicKey.modPow(rPrivateKey, p);
-            System.out.println("LK: " + LK);
 
             // Compute MAC= H(LK || gPowR || C || LK) where || is concatenation and H is SHA-1
             String MAC2 = LK.toString() + gPowR.toString() + C.toString() + LK.toString();
             byte[] messageDigest = null;
-            System.out.println("MAC2: " + MAC2);
             try {
                 MessageDigest md = MessageDigest.getInstance("SHA-1");
                 MAC2 = Base64.getEncoder().encodeToString(md.digest(MAC2.getBytes()));
@@ -178,11 +186,12 @@ public class main {
         BigInteger localPrivateKey = new BigInteger(lPrivateKey);
         BigInteger remotePublicKey = new BigInteger(rPublicKey);
         int port = Integer.parseInt(remotePort);
+        System.out.println("Remote Port: " + port);
         Scanner sc = new Scanner(System.in);
 
         // Step 1:Create the socket object for
         // carrying the data.
-        DatagramSocket ds = new DatagramSocket(port);
+        DatagramSocket ds = new DatagramSocket();
         InetAddress ip = InetAddress.getByName(remoteIP);
         byte buf[] = null;
 
@@ -204,28 +213,22 @@ public class main {
 
             // g^r mod p
             BigInteger gPowR = g.modPow(r, p);
-            System.out.println("gPowR: " + gPowR);
 
             // TK = remotePublicKey^r mod p
             BigInteger TK = remotePublicKey.modPow(r, p);
-            System.out.println("TK: " + TK);
 
             // Use TK as key to encrypt message C = E(TK, M)
             BigInteger C = TK.multiply(new BigInteger(inp.getBytes()));
-            System.out.println("C: " + C);
 
             // LK = remotePublicKey^localPrivateKey mod p
             BigInteger LK = remotePublicKey.modPow(localPrivateKey, p);
-            System.out.println("LK: " + LK);
 
             // Compute MAC= H(LK || gPowR || C || LK) where || is concatenation and H is SHA-1
             String MAC = LK.toString() + gPowR.toString() + C.toString() + LK.toString();
-            System.out.println("MAC: " + MAC);
             byte[] messageDigest = null;
             try {
                 MessageDigest md = MessageDigest.getInstance("SHA-1");
                 String mdString = Base64.getEncoder().encodeToString(md.digest(MAC.getBytes()));
-                System.out.println("mdString: " + mdString);
                 messageDigest = (gPowR.toString() + "," + C.toString() + "," + mdString).getBytes();
             }
             catch (Exception e) {
@@ -236,7 +239,7 @@ public class main {
             // Step 2 : Create the datagramPacket for sending the packet
             // to the server that consists of (gPowR, C, MAC)
             DatagramPacket DpSend =
-                    new DatagramPacket(messageDigest, messageDigest.length, ip, 1234);
+                    new DatagramPacket(messageDigest, messageDigest.length, ip, port);
 
             // Step 3 : invoke the send call to actually send
             // the data and print buf

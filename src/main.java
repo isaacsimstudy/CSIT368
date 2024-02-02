@@ -13,40 +13,26 @@ public class main {
     static BigInteger p = new BigInteger("13232376895198612407547930718267435757728527029623408872245156039757713029036368719146452186041204237350521785240337048752071462798273003935646236777459223");
     static BigInteger g = new BigInteger("5421644057436475141609648488325705128047428394380474376834667300766108262613900542681289080713724597310673074119355136085795982097390670890367185141189796");
 
+    static boolean serverRunning = true;
+    static boolean clientRunning = true;
+
 
     public static void main(String[] args) throws IOException{
-        System.out.println("Working Directory = " + System.getProperty("user.dir"));
-        String [] sender = new String[6];
-        System.out.println("Enter Sender name");
+        System.out.println("File name: ");
         Scanner sc = new Scanner(System.in);
-        String senderFileName = sc.nextLine();
+        String fileName = sc.nextLine();
+
+
+        String [] fileInfo = new String[7];
+        System.out.println("Enter Sender name");
         while(true){
             try {
-                File file = new File(senderFileName);
+                File file = new File(fileName);
                 Scanner fileReader = new Scanner(file);
                 int i = 0;
                 while (fileReader.hasNextLine()) {
                     String line = fileReader.nextLine();
-                    sender[i] = line.split(" ")[1];
-                    i++;
-                }
-                fileReader.close();
-                break;
-            } catch (Exception e) {
-                System.out.println("File not found");
-            }
-        }
-        String [] receiver = new String[6];
-        System.out.println("Enter Receiver name");
-        String receiverFileName = sc.nextLine();
-        while(true){
-            try {
-                File file = new File(receiverFileName);
-                Scanner fileReader = new Scanner(file);
-                int i = 0;
-                while (fileReader.hasNextLine()) {
-                    String line = fileReader.nextLine();
-                    receiver[i] = line.split(" ")[1];
+                    fileInfo[i] = line.split(" ")[1];
                     i++;
                 }
                 fileReader.close();
@@ -57,11 +43,12 @@ public class main {
         }
 
         Thread server = new Thread(new Runnable(){
+
             @Override
             public void run(){
                 try {
                     System.out.println("Server started");
-                    server(receiver[3], receiver[4], sender[5]);
+                    server(fileInfo[1], fileInfo[4], fileInfo[6]);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -72,31 +59,26 @@ public class main {
             public void run(){
                 try {
                     System.out.println("Client started");
-                    client(sender[0], sender[1], sender[4], receiver[5]);
+                    client(fileInfo[2], fileInfo[3], fileInfo[4], fileInfo[6]);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         });
-        System.out.println("Choose to start server or client or both");
-        System.out.println("1. Server");
-        System.out.println("2. Client");
-        System.out.println("3. Both");
-        int choice = sc.nextInt();
-        switch(choice){
-            case 1:
-                server.start();
-                break;
-            case 2:
-                client.start();
-                break;
-            case 3:
-                server.start();
-                client.start();
-                break;
-            default:
-                System.out.println("Invalid choice");
-                break;
+        server.start();
+        client.start();
+        while(server.isAlive() || client.isAlive()){
+            if (!server.isAlive() || !client.isAlive()){
+                System.out.println("Server: " + server.isAlive());
+                System.out.println("Client: " + client.isAlive());
+                try {
+                    System.exit(0);
+                    break;
+                }
+                catch (Exception e){
+                    System.out.println("Error");
+                }
+            }
         }
     }
 
@@ -109,8 +91,12 @@ public class main {
         byte[] receive = new byte[65535];
 
         DatagramPacket DpReceive = null;
-        while (true)
+        while (clientRunning)
         {
+            System.out.println("Client running: " + clientRunning);
+            if(!clientRunning){
+                break;
+            }
             // Step 2 : create a DatagramPacket to receive the data.
             DpReceive = new DatagramPacket(receive, receive.length);
             System.out.println("Waiting for client to send message");
@@ -197,8 +183,12 @@ public class main {
 
 
         // loop while user not enters "bye"
-        while (true)
+        while (serverRunning)
         {
+            System.out.println("Server running: " + serverRunning);
+            if(!serverRunning){
+                break;
+            }
             // Taking input from user
             System.out.println("Enter the message to send");
             String inp = sc.nextLine();

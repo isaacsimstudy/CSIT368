@@ -1,0 +1,20 @@
+This is a program to send messages using the UDP protocol while making sure that the
+two way communication street is secure.
+
+## How to run the program
+1. Have two open terminals.
+2. In the first terminal, compile the program using Javac main.java
+3. In the first terminal, run the program using java main.java
+    a. Enter the name of the text file you want to run
+4. In the second terminal, run the program using java main.java
+    a. Enter the name of the text file you want to run
+5. Now the two terminals should be able to communicate with each other.
+
+## How the program works
+1. The program uses the UDP protocol to send messages between the two terminals.
+2. The program uses a key to encrypt the messages before sending them.
+3. The program uses a key to decrypt the messages after receiving them.
+4. The P and G values are hardcoded into the program.
+5. The program uses the Diffie-Hellman key exchange to generate the key.
+6. In order for the program to send and receive, the program is multi-threaded.
+7. The DHParameterGenerator is used to generate the P and G values.
